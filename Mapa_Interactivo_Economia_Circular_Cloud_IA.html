@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Interactivo · Economía Circular, Cloud Computing e IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F4EE;
+  --paper-2:#EFECE2;
+  --ink:#1B1B18;
+  --ink-soft:#5B5A52;
+  --line:#D8D4C6;
+
+  --circ-deep:#1B4332;
+  --circ:#2D6A4F;
+  --circ-light:#74C69D;
+  --circ-bg:#E7F3EC;
+
+  --cloud-deep:#0B3954;
+  --cloud:#1D5C8A;
+  --cloud-light:#4895EF;
+  --cloud-bg:#E8F1FA;
+
+  --ia-deep:#9A3412;
+  --ia:#E85D04;
+  --ia-light:#FFBA08;
+  --ia-bg:#FDEEDD;
+
+  --integ:#5B3A8E;
+  --integ-light:#9D7FC9;
+  --integ-bg:#F0EAF8;
+
+  --shadow: 0 8px 30px rgba(27,27,24,0.10);
+  --shadow-lg: 0 20px 60px rgba(27,27,24,0.20);
+  --radius: 14px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(27,27,24,0.045) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+}
+
+.app{ max-width:1280px; margin:0 auto; padding:28px 24px 80px; }
+
+/* ============ HEADER ============ */
+header.top{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
+  padding-bottom:22px; margin-bottom:8px; border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
+}
+.brand-eyebrow{
+  font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--ink-soft); margin:0 0 6px 0; display:flex; align-items:center; gap:8px;
+}
+.brand-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--circ);box-shadow:0 0 0 3px var(--circ-bg);}
+h1.title{
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(26px,3.4vw,40px);
+  margin:0; line-height:1.08; letter-spacing:-0.01em; max-width:720px;
+}
+h1.title .accent-circ{color:var(--circ);}
+h1.title .accent-cloud{color:var(--cloud);}
+h1.title .accent-ia{color:var(--ia);}
+.subtitle{ color:var(--ink-soft); font-size:14.5px; margin-top:10px; max-width:560px; line-height:1.5; }
+
+.breadcrumb-zone{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; min-width:220px; }
+#breadcrumb{
+  font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+}
+#breadcrumb button{
+  background:none;border:none;color:var(--ink-soft);font-family:inherit;font-size:inherit;
+  cursor:pointer; padding:2px 4px; border-radius:4px;
+}
+#breadcrumb button:hover{ background:var(--paper-2); color:var(--ink); }
+#breadcrumb .sep{color:var(--line);}
+#breadcrumb .current{color:var(--ink); font-weight:600;}
+
+.level-pill{
+  font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em;
+  background:var(--ink); color:var(--paper); padding:5px 11px; border-radius:100px;
+}
+
+/* ============ LEGEND ============ */
+.legend{
+  display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+  margin:18px 0 28px; padding:14px 18px; background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.legend-title{ font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); margin-right:6px;}
+.legend-item{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink); }
+.legend-swatch{ width:13px; height:13px; border-radius:4px; flex-shrink:0; }
+.legend-line{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft);}
+.legend-line .ln{ width:28px; height:0; border-top:2px dashed var(--ink-soft); }
+.legend-line .ln.strong{ border-top:4px solid var(--ink-soft); border-style:solid;}
+
+/* ============ STAGE ============ */
+.stage{ position:relative; min-height:auto; }
+
+.view{ display:none; }
+.view.active{ display:block; animation:fadeIn .35s ease; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+/* ---- LEVEL 1: SVG MAP ---- */
+#level1-svg-wrap{ width:100%; }
+#level1-svg-wrap svg{ width:100%; height:auto; display:block; }
+
+.node-group{ cursor:pointer; }
+.node-circle{ transition: transform .25s ease, filter .25s ease; transform-origin:center; }
+.node-group:hover .node-circle{ transform:scale(1.045); filter:brightness(1.06); }
+.node-group:focus .node-circle{ outline:none; }
+.node-group:focus-visible .node-circle{ stroke:var(--ink); stroke-width:3; }
+.node-label{ font-family:'Space Grotesk',sans-serif; font-weight:700; pointer-events:none; }
+.node-sub{ font-family:'Inter',sans-serif; font-weight:500; pointer-events:none; }
+
+.flow-line{ stroke-dasharray: 7 6; animation: dash 16s linear infinite; }
+@keyframes dash{ to{ stroke-dashoffset:-260; } }
+
+.center-badge text{ font-family:'JetBrains Mono', monospace; }
+
+/* ---- LEVEL 2: CATEGORY GRID ---- */
+.level2-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; flex-wrap:wrap;}
+.level2-head .badge{
+  width:46px;height:46px;border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+}
+.level2-head h2{ font-family:'Space Grotesk',sans-serif; font-size:26px; margin:0; font-weight:700; }
+.level2-head p{ margin:2px 0 0; color:var(--ink-soft); font-size:14px; max-width:640px; }
+
+.card-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:16px; }
+
+.sub-card{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px;
+  cursor:pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  border-top:4px solid var(--cat-color, var(--circ));
+  position:relative; overflow:hidden;
+}
+.sub-card:hover, .sub-card:focus-visible{
+  transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--cat-color, var(--circ));
+  outline:none;
+}
+.sub-card h3{ font-family:'Space Grotesk',sans-serif; font-size:17px; margin:0 0 8px; line-height:1.25;}
+.sub-card .tag-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.sub-card .tag{
+  font-size:11px; font-family:'JetBrains Mono',monospace; background:var(--cat-bg,var(--circ-bg));
+  color:var(--cat-deep,var(--circ-deep)); padding:3px 8px; border-radius:100px;
+}
+.sub-card .stat-preview{ font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+.sub-card .stat-preview b{ color:var(--ink); }
+.sub-card .open-hint{
+  position:absolute; top:14px; right:14px; font-size:11px; color:var(--ink-soft);
+  font-family:'JetBrains Mono',monospace; opacity:0; transition:opacity .15s ease;
+}
+.sub-card:hover .open-hint{ opacity:1; }
+
+.back-btn{
+  font-family:'JetBrains Mono',monospace; font-size:12px; background:#fff; border:1px solid var(--line);
+  padding:8px 14px; border-radius:100px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  color:var(--ink); margin-bottom:18px; transition:border-color .15s ease, background .15s ease;
+}
+.back-btn:hover{ border-color:var(--ink); background:var(--paper-2); }
+
+/* ---- MODAL (Level 3) ---- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(20,19,15,0.55); backdrop-filter:blur(3px);
+  display:none; align-items:flex-start; justify-content:center; padding:5vh 16px 5vh;
+  z-index:1000; overflow-y:auto;
+}
+.modal-overlay.active{ display:flex; animation:overlayIn .2s ease; }
+@keyframes overlayIn{ from{opacity:0;} to{opacity:1;} }
+
+.modal-card{
+  background:#fff; border-radius:18px; max-width:680px; width:100%;
+  box-shadow:var(--shadow-lg); animation:modalIn .28s cubic-bezier(.2,.8,.2,1);
+  overflow:hidden;
+}
+@keyframes modalIn{ from{opacity:0; transform:translateY(18px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+
+.modal-header{
+  padding:24px 28px 18px; border-bottom:1px solid var(--line);
+  background:var(--cat-bg,var(--circ-bg)); position:relative;
+}
+.modal-header .cat-tag{
+  font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.07em;
+  color:var(--cat-deep,var(--circ-deep)); margin-bottom:8px; display:block; font-weight:600;
+}
+.modal-header h2{ font-family:'Space Grotesk',sans-serif; font-size:23px; margin:0; color:var(--ink); line-height:1.25;}
+.modal-close{
+  position:absolute; top:18px; right:18px; width:34px; height:34px; border-radius:50%;
+  border:none; background:rgba(255,255,255,0.7); cursor:pointer; font-size:18px; color:var(--ink);
+  display:flex; align-items:center; justify-content:center; transition:background .15s ease;
+}
+.modal-close:hover{ background:#fff; }
+
+.modal-body{ padding:22px 28px 28px; max-height:62vh; overflow-y:auto; }
+.modal-section{ margin-bottom:20px; }
+.modal-section:last-child{ margin-bottom:0; }
+.modal-section h4{
+  font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.07em;
+  color:var(--ink-soft); margin:0 0 9px; display:flex; align-items:center; gap:7px;
+}
+.modal-section h4::before{ content:''; width:14px; height:2px; background:var(--cat-color,var(--circ)); display:inline-block;}
+.modal-section p{ margin:0; font-size:14.5px; line-height:1.6; color:var(--ink); }
+.modal-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
+.modal-list li{
+  font-size:14px; line-height:1.5; color:var(--ink); padding-left:18px; position:relative;
+}
+.modal-list li::before{
+  content:''; position:absolute; left:0; top:8px; width:7px; height:7px; border-radius:2px;
+  background:var(--cat-color,var(--circ));
+}
+.impact-box{
+  background:var(--paper-2); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:8px;
+}
+.impact-row{ display:flex; align-items:baseline; gap:10px; font-size:14px; }
+.impact-row .num{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--cat-deep,var(--circ-deep)); font-size:16px; white-space:nowrap;}
+.org-chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.org-chip{
+  font-size:12.5px; background:#fff; border:1px solid var(--line); padding:6px 11px; border-radius:100px;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.org-chip a{ color:var(--cat-deep,var(--circ-deep)); text-decoration:none; font-weight:600; }
+.org-chip a:hover{ text-decoration:underline; }
+.norm-box{
+  font-size:13px; color:var(--ink-soft); background:var(--paper-2); padding:10px 13px; border-radius:8px; line-height:1.55;
+}
+.source-note{
+  font-size:11.5px; color:var(--ink-soft); margin-top:18px; padding-top:14px; border-top:1px dashed var(--line);
+  font-family:'JetBrains Mono',monospace; line-height:1.6;
+}
+
+/* ---- Footer / official links ---- */
+.footer-links{
+  margin-top:50px; padding-top:26px; border-top:1px solid var(--line);
+}
+.footer-links h3{ font-family:'Space Grotesk',sans-serif; font-size:16px; margin:0 0 14px;}
+.link-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.link-grid a{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px 14px;
+  text-decoration:none; color:var(--ink); font-size:13.5px; transition:border-color .15s ease, transform .15s ease;
+}
+.link-grid a:hover{ border-color:var(--ink); transform:translateX(2px); }
+.link-grid a span.arrow{ color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+
+@media (max-width:680px){
+  header.top{ flex-direction:column; }
+  .breadcrumb-zone{ align-items:flex-start; width:100%; }
+  #breadcrumb{ justify-content:flex-start; }
+  .modal-body{ max-height:70vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="top">
+    <div>
+      <p class="brand-eyebrow"><span class="dot"></span> MAPA INTERACTIVO · TECNOLOGÍA SOSTENIBLE 2020–2025</p>
+      <h1 class="title">
+        <span class="accent-circ">Economía&nbsp;Circular</span> ·
+        <span class="accent-cloud">Cloud&nbsp;Computing</span> ·
+        <span class="accent-ia">Inteligencia&nbsp;Artificial</span>
+      </h1>
+      <p class="subtitle">Explora las interrelaciones, aplicaciones y sinergias entre los tres pilares de la tecnología sostenible. Haz clic en cada nodo para profundizar.</p>
+    </div>
+    <div class="breadcrumb-zone">
+      <span class="level-pill" id="level-pill">NIVEL 1 — VISTA GENERAL</span>
+      <nav id="breadcrumb"></nav>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span class="legend-title">Leyenda</span>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--circ)"></span> Economía Circular</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--cloud)"></span> Cloud Computing</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--ia)"></span> Inteligencia Artificial</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--integ)"></span> Integración y Sinergias</div>
+    <div class="legend-line"><span class="ln strong"></span> Relación fuerte</div>
+    <div class="legend-line"><span class="ln"></span> Relación moderada</div>
+  </div>
+
+  <div class="stage">
+
+    <!-- LEVEL 1 -->
+    <section class="view active" id="view-level1">
+      <div id="level1-svg-wrap"></div>
+    </section>
+
+    <!-- LEVEL 2 -->
+    <section class="view" id="view-level2">
+      <button class="back-btn" id="btn-back-l1">&larr; Volver a vista general</button>
+      <div class="level2-head">
+        <div class="badge" id="l2-badge"></div>
+        <div>
+          <h2 id="l2-title"></h2>
+          <p id="l2-desc"></p>
+        </div>
+      </div>
+      <div class="card-grid" id="l2-grid"></div>
+    </section>
+
+  </div>
+
+  <div class="footer-links">
+    <h3>Anexo C — Enlaces oficiales esenciales</h3>
+    <div class="link-grid" id="official-links"></div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-card" id="modal-card">
+    <div class="modal-header" id="modal-header">
+      <button class="modal-close" id="modal-close" aria-label="Cerrar">&times;</button>
+      <span class="cat-tag" id="modal-cat-tag"></span>
+      <h2 id="modal-title"></h2>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// DATOS DEL MAPA INTERACTIVO
+// Fuente: Documento "Trabajo de Investigación sobre Economía Circular,
+// Cloud Computing e IA" + Anexos A, B, C de la Actividad 011.
+// =====================================================================
+
+const CATEGORIES = {
+
+  circular: {
+    id: "circular",
+    name: "Economía Circular en Tecnología",
+    shortName: "Economía Circular",
+    icon: "♻️",
+    color: "var(--circ)",
+    deep: "var(--circ-deep)",
+    bg: "var(--circ-bg)",
+    description: "Modelos de producción y consumo tecnológico basados en reducir, reutilizar, reciclar y rediseñar, frente al paradigma lineal extraer–fabricar–desechar.",
+    subcategories: [
+      {
+        id: "circ-conceptos",
+        title: "Conceptos Fundamentales",
+        tags: ["Principios 9R", "Cradle-to-cradle", "Lineal vs. circular"],
+        preview: "<b>53.6M ton</b> de e-waste global en 2023 · <b>3–4%</b> de las emisiones globales de TIC",
+        detail: {
+          description: "La economía circular tecnológica reemplaza el modelo lineal (extraer–fabricar–desechar) por ciclos cerrados de materiales. Se apoya en los Principios 9R (Rechazar, Reducir, Reutilizar, Reparar, Reacondicionar, Refabricar, Repropósito, Reciclar, Recuperar) y en el diseño cradle-to-cradle, donde cada producto se concibe desde su origen para reingresar al ciclo productivo.",
+          applications: [
+            "Diseño modular de dispositivos para facilitar reparación y actualización",
+            "Pasaportes digitales de producto para trazabilidad de materiales",
+            "Sustitución de la economía lineal por modelos de servitización (Producto como Servicio)",
+            "Auditorías de ciclo de vida (LCA) en el diseño de hardware",
+            "Estrategias de desmaterialización mediante software y virtualización"
+          ],
+          caseStudies: [
+            { name: "Unión Europea — Green Deal", note: "Marco regulatorio que obliga al ecodiseño y a la trazabilidad de materiales críticos (2020–2025)." },
+            { name: "México — Estrategia Nacional de Economía Circular", note: "Articula la LGPGIR reformada con metas sectoriales de reciclaje tecnológico." }
+          ],
+          impact: [
+            { num: "53.6M ton", label: "de residuos electrónicos generados globalmente en 2023" },
+            { num: "3–4%", label: "de las emisiones globales de gases de efecto invernadero provienen del sector TIC" }
+          ],
+          orgs: [
+            { name: "Ellen MacArthur Foundation", url: "https://www.ellenmacarthurfoundation.org" },
+            { name: "Unión Europea", url: "https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal_es" }
+          ],
+          norm: "UE Green Deal (2019–2024) · Estrategia Nacional de Economía Circular (México) · Objetivos de Desarrollo Sostenible (ONU, ODS 12)."
+        }
+      },
+      {
+        id: "circ-hardware",
+        title: "Hardware Sostenible",
+        tags: ["Modularidad", "Biomateriales", "Plásticos oceánicos"],
+        preview: "Fairphone ofrece <b>10 años</b> de soporte · HP usa <b>30%</b> de plástico reciclado",
+        detail: {
+          description: "El hardware sostenible prioriza la modularidad, el desensamblaje fácil y el uso de biomateriales o materiales reciclados en la fabricación. Busca extender la vida útil de los dispositivos y reducir la dependencia de materias primas vírgenes.",
+          applications: [
+            "Dispositivos modulares con componentes intercambiables (cámara, batería, puertos)",
+            "Adhesivos termo-reversibles que permiten desensamblar sin dañar piezas",
+            "Tornillos estandarizados para facilitar la reparación con herramientas comunes",
+            "Incorporación de plásticos recuperados del océano en carcasas y empaques",
+            "Guías de reparación públicas y venta de repuestos oficiales"
+          ],
+          caseStudies: [
+            { name: "Framework Laptop", note: "Laptop modular con piezas reemplazables individualmente, pensada para durar más de una generación de hardware." },
+            { name: "Fairphone 5", note: "Smartphone ético y reparable con compromiso de 10 años de soporte de software." },
+            { name: "Dell Concept Luna", note: "Prototipo de laptop diseñado para desensamblarse en menos de 30 segundos." },
+            { name: "HP Ocean Plastic", note: "Línea de productos con un 30% de contenido de plástico oceánico reciclado." }
+          ],
+          impact: [
+            { num: "10 años", label: "de soporte de software comprometido por Fairphone" },
+            { num: "30%", label: "de plástico reciclado en productos de la línea HP Ocean Plastic" }
+          ],
+          orgs: [
+            { name: "Fairphone", url: "https://www.fairphone.com" },
+            { name: "Framework", url: "https://frame.work" }
+          ],
+          norm: "Directiva de Ecodiseño (UE) · Right to Repair (legislaciones nacionales emergentes)."
+        }
+      },
+      {
+        id: "circ-ewaste",
+        title: "Gestión de E-waste",
+        tags: ["Minería urbana", "Reciclaje químico", "Reacondicionamiento"],
+        preview: "Robot Daisy de Apple desensambla <b>240 iPhones/hora</b> · Microsoft reutiliza <b>88%</b>",
+        detail: {
+          description: "La gestión de residuos electrónicos combina minería urbana (recuperación de metales valiosos de dispositivos desechados), reciclaje químico avanzado y reacondicionamiento de equipos para alargar su vida útil antes del reciclaje final.",
+          applications: [
+            "Robots de desensamblaje automatizado para separar componentes con precisión",
+            "Reciclaje químico de baterías de ion-litio para recuperar litio y cobalto",
+            "Plataformas de reacondicionamiento y reventa certificada de electrónicos",
+            "Centros circulares corporativos para reingreso de hardware empresarial al ciclo productivo"
+          ],
+          caseStudies: [
+            { name: "Apple — Robot Daisy", note: "Sistema robótico capaz de desensamblar hasta 240 iPhones por hora para recuperar materiales." },
+            { name: "AMP Cortex", note: "Sistema robótico con visión artificial para identificación y separación de materiales reciclables." },
+            { name: "Back Market", note: "Plataforma líder de reacondicionamiento y reventa de dispositivos electrónicos certificados." },
+            { name: "Microsoft Circular Centers", note: "Centros que reutilizan o reciclan servidores y componentes de datacenter retirados." },
+            { name: "Redwood Materials", note: "Reciclaje químico a gran escala de baterías para recuperar materiales críticos." }
+          ],
+          impact: [
+            { num: "240/hora", label: "iPhones desensamblados por el robot Daisy de Apple" },
+            { num: "88%", label: "de reutilización de componentes de servidor en los Circular Centers de Microsoft" }
+          ],
+          orgs: [
+            { name: "Apple", url: "https://www.apple.com/environment" },
+            { name: "Microsoft Circular Centers", url: "https://www.microsoft.com/sustainability" }
+          ],
+          norm: "Directiva RAEE (Residuos de Aparatos Eléctricos y Electrónicos, UE) · Normativas nacionales de gestión de e-waste."
+        }
+      },
+      {
+        id: "circ-mexico",
+        title: "Casos México",
+        tags: ["LGPGIR", "NOM-161-SEMARNAT", "Blockchain trazabilidad"],
+        preview: "<b>1.2M ton</b> de e-waste al año en México · solo <b>10%</b> se recicla formalmente",
+        detail: {
+          description: "México ha reformado su marco normativo de gestión de residuos (LGPGIR) e impulsado iniciativas corporativas de economía circular, aunque la brecha entre generación de e-waste y reciclaje formal sigue siendo significativa.",
+          applications: [
+            "Aplicación de la NOM-161-SEMARNAT-2011 para el manejo de residuos de manejo especial",
+            "Programas estatales de recolección y reciclaje de electrónicos",
+            "IoT aplicado a logística de recolección de residuos urbanos",
+            "Blockchain para trazabilidad de materiales reciclados en cadenas de suministro",
+            "Apps móviles ciudadanas para localizar centros de reciclaje"
+          ],
+          caseStudies: [
+            { name: "Bimbo Digital", note: "Iniciativas de digitalización y optimización de procesos con enfoque en reducción de desperdicio." },
+            { name: "CEMEX — Concreto Circular", note: "Incorporación de materiales reciclados y residuos de construcción en la producción de concreto." },
+            { name: "FEMSA — Envases Retornables", note: "Programa de envases retornables que reduce la generación de residuos plásticos de un solo uso." }
+          ],
+          impact: [
+            { num: "1.2M ton/año", label: "de e-waste generado en México" },
+            { num: "10%", label: "tasa de reciclaje formal de e-waste en el país" },
+            { num: "$2.5B USD", label: "inversión estimada en economía circular en México (2021–2024)" }
+          ],
+          orgs: [
+            { name: "SEMARNAT", url: "https://www.gob.mx/semarnat" },
+            { name: "CEMEX", url: "https://www.cemex.com" }
+          ],
+          norm: "LGPGIR reformada (Ley General para la Prevención y Gestión Integral de los Residuos) · NOM-161-SEMARNAT-2011."
+        }
+      }
+    ]
+  },
+
+  cloud: {
+    id: "cloud",
+    name: "Cloud Computing Sostenible",
+    shortName: "Cloud Computing",
+    icon: "☁️",
+    color: "var(--cloud)",
+    deep: "var(--cloud-deep)",
+    bg: "var(--cloud-bg)",
+    description: "Infraestructura, plataformas y servicios en la nube diseñados para minimizar el consumo energético, la huella de carbono y el uso de recursos hídricos.",
+    subcategories: [
+      {
+        id: "cloud-infra",
+        title: "Infraestructura Verde",
+        tags: ["PUE < 1.2", "Refrigeración líquida", "Free-cooling"],
+        preview: "Google Finlandia opera con un <b>PUE de 1.06</b> · <b>88%</b> menos emisiones vs. on-premise",
+        detail: {
+          description: "La infraestructura verde de datacenters se mide con indicadores como el PUE (Power Usage Effectiveness, idealmente menor a 1.2), CUE (Carbon Usage Effectiveness) y WUE (Water Usage Effectiveness), apoyándose en refrigeración líquida y enfriamiento natural (free-cooling).",
+          applications: [
+            "Sistemas de free-cooling que aprovechan el clima exterior para enfriar servidores",
+            "Datacenters modulares prefabricados que reducen tiempos y costos de construcción",
+            "Refrigeración líquida directa a chip para cargas de trabajo de alta densidad",
+            "Edge computing para reducir la distancia de transmisión de datos y el consumo asociado"
+          ],
+          caseStudies: [
+            { name: "Google — Datacenter en Finlandia", note: "Alcanza un PUE de 1.06 gracias al uso del agua del Mar Báltico para refrigeración." },
+            { name: "Microsoft — Project Natick", note: "Datacenters submarinos experimentales que aprovechan el enfriamiento natural del océano." },
+            { name: "AWS — Región Irlanda", note: "Infraestructura abastecida con energía eólica local como parte de su estrategia de descarbonización." }
+          ],
+          impact: [
+            { num: "PUE 1.06", label: "eficiencia energética del datacenter de Google en Finlandia" },
+            { num: "88%", label: "reducción promedio de emisiones del cloud computing frente a infraestructura on-premise" },
+            { num: "24/7 CFE", label: "energía libre de carbono las 24 horas en 5 regiones de Google Cloud" }
+          ],
+          orgs: [
+            { name: "Google Cloud", url: "https://sustainability.google" },
+            { name: "Microsoft Project Natick", url: "https://www.microsoft.com/sustainability" }
+          ],
+          norm: "ISO/IEC 30134 (indicadores de eficiencia de datacenters) · LEED v4.1 para datacenters."
+        }
+      },
+      {
+        id: "cloud-servicios",
+        title: "Servicios y Plataformas Verdes",
+        tags: ["Serverless", "Carbon-aware computing", "Containerization"],
+        preview: "Google Cloud reportó <b>18M ton CO2e</b> de reducción para sus clientes en 2023",
+        detail: {
+          description: "Los modelos de servicio en la nube (IaaS, SaaS) permiten consolidar infraestructura y reducir el desperdicio energético. El cómputo sin servidor (serverless) y la conteinerización optimizan el uso de recursos según demanda real, mientras que el carbon-aware computing desplaza cargas de trabajo a momentos de mayor disponibilidad de energía limpia.",
+          applications: [
+            "Arquitecturas serverless que escalan automáticamente según la demanda real",
+            "Contenedores y microservicios para maximizar la utilización de servidores",
+            "Calculadoras de huella de carbono integradas en las plataformas cloud",
+            "Desplazamiento inteligente de cargas de trabajo hacia regiones con energía renovable disponible"
+          ],
+          caseStudies: [
+            { name: "Google Carbon Sense", note: "Suite de herramientas para que las organizaciones midan y reduzcan su huella de carbono en la nube." },
+            { name: "Microsoft Emissions Dashboard", note: "Panel de control que cuantifica las emisiones asociadas al uso de servicios Azure." },
+            { name: "AWS Customer Carbon Footprint Tool", note: "Herramienta de reporte de emisiones para clientes de Amazon Web Services." }
+          ],
+          impact: [
+            { num: "18M ton CO2e", label: "de reducción de emisiones reportada por clientes de Google Cloud en 2023" }
+          ],
+          orgs: [
+            { name: "Google Cloud", url: "https://sustainability.google" },
+            { name: "AWS Sustainability", url: "https://sustainability.aboutamazon.com" }
+          ],
+          norm: "Green Software Engineering (principios de la Green Software Foundation) · Reportes ESG voluntarios."
+        }
+      },
+      {
+        id: "cloud-cert",
+        title: "Certificaciones y Compromisos",
+        tags: ["LEED", "Climate Neutral Pact", "Carbono neutralidad"],
+        preview: "Más de <b>75 operadores</b> de la UE firmaron el Pacto de Neutralidad Climática",
+        detail: {
+          description: "Las certificaciones y compromisos públicos dan transparencia a los esfuerzos de sostenibilidad del sector cloud: desde estándares de construcción de datacenters (LEED) hasta pactos voluntarios de neutralidad climática y reportes estandarizados ante inversionistas.",
+          applications: [
+            "Certificación LEED v4.1 específica para datacenters",
+            "Reportes automatizados de sostenibilidad alineados a estándares internacionales",
+            "Benchmarking de eficiencia energética entre operadores del sector",
+            "Scoring ESG (ambiental, social y de gobernanza) para inversión responsable"
+          ],
+          caseStudies: [
+            { name: "Climate Neutral Data Centre Pact", note: "Más de 75 operadores y asociaciones de datacenters en la UE comprometidos con la neutralidad climática para 2030." },
+            { name: "CDP Cloud Computing", note: "Marco de divulgación de información climática aplicado al sector de cómputo en la nube." },
+            { name: "AWS — Compromiso de carbono neutralidad 2040", note: "Meta corporativa de alcanzar cero emisiones netas para el año 2040." }
+          ],
+          impact: [
+            { num: "75+", label: "operadores de datacenters en la UE adheridos al Pacto de Neutralidad Climática" }
+          ],
+          orgs: [
+            { name: "AWS Sustainability", url: "https://sustainability.aboutamazon.com" },
+            { name: "Microsoft Sustainability", url: "https://www.microsoft.com/sustainability" }
+          ],
+          norm: "LEED v4.1 (Datacenters) · Energy Star · TCO Certified · Reportes obligatorios de sostenibilidad en la UE (vigentes desde 2025)."
+        }
+      }
+    ]
+  },
+
+  ia: {
+    id: "ia",
+    name: "Inteligencia Artificial para la Sustentabilidad",
+    shortName: "Inteligencia Artificial",
+    icon: "🧠",
+    color: "var(--ia)",
+    deep: "var(--ia-deep)",
+    bg: "var(--ia-bg)",
+    description: "Aplicación de algoritmos de IA para optimizar recursos y procesos ambientales, junto con la gestión de los desafíos energéticos y éticos que su propio desarrollo plantea.",
+    subcategories: [
+      {
+        id: "ia-aplicaciones",
+        title: "Aplicaciones Clave",
+        tags: ["Smart grids", "Agricultura de precisión", "Computer vision"],
+        preview: "DeepMind logra <b>40%</b> de reducción en refrigeración · John Deere reduce <b>77%</b> de herbicidas",
+        detail: {
+          description: "La IA optimiza recursos en tiempo real en sectores tan diversos como la energía, el reciclaje y la agricultura, mediante modelos predictivos, visión artificial y redes eléctricas inteligentes (smart grids 2.0).",
+          applications: [
+            "Optimización de sistemas de refrigeración en datacenters mediante aprendizaje por refuerzo",
+            "Redes eléctricas inteligentes que equilibran oferta y demanda con fuentes renovables variables",
+            "Clasificación automatizada de residuos mediante visión artificial",
+            "Mantenimiento predictivo de maquinaria industrial para evitar fallos y desperdicio de recursos",
+            "Monitoreo de cultivos y optimización de riego mediante sensores e imágenes satelitales"
+          ],
+          caseStudies: [
+            { name: "Google DeepMind — UK Grid", note: "Sistema de IA que redujo en 40% el consumo de energía en refrigeración de datacenters de Google." },
+            { name: "AMP Neuron / AMP Robotics", note: "Robots con visión artificial que clasifican materiales reciclables con alta precisión." },
+            { name: "John Deere — See & Spray", note: "Tecnología de visión artificial que identifica malezas y aplica herbicida solo donde es necesario." },
+            { name: "IBM Watson Agriculture", note: "Plataforma de análisis predictivo para optimizar decisiones agrícolas." }
+          ],
+          impact: [
+            { num: "40%", label: "reducción en consumo de refrigeración lograda por Google DeepMind" },
+            { num: "77%", label: "menos uso de herbicidas con la tecnología See & Spray de John Deere" },
+            { num: "95%", label: "precisión en clasificación de residuos con sistemas de visión artificial" }
+          ],
+          orgs: [
+            { name: "Google DeepMind", url: "https://ai.google/sustainability" },
+            { name: "AMP Robotics", url: "https://www.amprobotics.com" }
+          ],
+          norm: "Principios de IA ética aplicada a sostenibilidad (OCDE) · Marcos voluntarios de reporte de impacto ambiental de IA."
+        }
+      },
+      {
+        id: "ia-desafios",
+        title: "Desafíos Ambientales",
+        tags: ["TinyML", "Cuantización", "Knowledge distillation"],
+        preview: "Entrenar GPT-4 consume cerca de <b>50 GWh</b> · el sector IA usa <b>3.5%</b> de la electricidad global",
+        detail: {
+          description: "El propio desarrollo de la IA representa un desafío ambiental: el entrenamiento de modelos grandes consume cantidades masivas de energía. Estrategias como TinyML, la cuantización y la destilación de conocimiento buscan reducir ese consumo sin sacrificar capacidad.",
+          applications: [
+            "TinyML para ejecutar modelos de IA en dispositivos de bajo consumo energético",
+            "Cuantización de modelos para reducir su tamaño y necesidad de cómputo",
+            "Destilación de conocimiento (knowledge distillation) de modelos grandes a modelos más pequeños y eficientes",
+            "Diseño de hardware especializado (TPUs, NPUs) optimizado para eficiencia energética"
+          ],
+          caseStudies: [
+            { name: "GPT-4 (OpenAI)", note: "Se estima un consumo energético de entrenamiento cercano a 50 GWh." },
+            { name: "Google TPU v5", note: "Unidad de procesamiento tensorial con el doble de eficiencia energética respecto a la generación anterior (TPU v4)." },
+            { name: "NVIDIA Hopper H100", note: "GPU diseñada con mejoras significativas en eficiencia energética por operación de cómputo de IA." }
+          ],
+          impact: [
+            { num: "~50 GWh", label: "consumo energético estimado del entrenamiento de GPT-4" },
+            { num: "3.5%", label: "de la electricidad global consumida por el sector de IA" },
+            { num: "2x", label: "mejora en eficiencia energética de TPU v5 frente a TPU v4" }
+          ],
+          orgs: [
+            { name: "Google AI", url: "https://ai.google/sustainability" }
+          ],
+          norm: "Reportes voluntarios de consumo energético de modelos de IA · Iniciativas de hardware verde de la industria de semiconductores."
+        }
+      },
+      {
+        id: "ia-etica",
+        title: "Ética y Gobernanza",
+        tags: ["Greenwashing en IA", "AI Act", "Model Cards"],
+        preview: "El <b>AI Act de la UE</b> clasifica modelos de alto riesgo según su consumo energético",
+        detail: {
+          description: "El crecimiento de la IA ha generado preocupaciones sobre greenwashing (sostenibilidad declarada pero no verificada) y sesgos algorítmicos. Regulaciones como el AI Act europeo y marcos como el NIST AI RMF buscan establecer principios de gobernanza y transparencia.",
+          applications: [
+            "Model Cards que documentan el consumo energético y origen de datos de un modelo",
+            "Calculadoras de huella de carbono específicas para modelos de IA",
+            "Paneles de IA responsable (Responsible AI dashboards) para monitoreo continuo",
+            "Auditorías de sesgo algorítmico antes del despliegue de modelos"
+          ],
+          caseStudies: [
+            { name: "EU AI Act", note: "Marco regulatorio europeo que clasifica sistemas de IA según riesgo, incluyendo criterios de consumo energético." },
+            { name: "NIST AI Risk Management Framework", note: "Marco de gestión de riesgos de IA desarrollado por el instituto de estándares de EE. UU." },
+            { name: "México — Carta Ética de IA", note: "Iniciativa nacional que incorpora principios de sostenibilidad en el uso de IA." }
+          ],
+          impact: [
+            { num: "Alto riesgo", label: "clasificación que el AI Act de la UE aplica a sistemas con consumo energético significativo" }
+          ],
+          orgs: [
+            { name: "Comisión Europea — AI Act", url: "https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal_es" }
+          ],
+          norm: "EU AI Act (2024) · NIST AI RMF · ISO/IEC 5338 (ciclo de vida de sistemas de IA) · Carta Ética de IA (México)."
+        }
+      }
+    ]
+  },
+
+  integracion: {
+    id: "integracion",
+    name: "Integración y Sinergias Tecnológicas",
+    shortName: "Integración y Sinergias",
+    icon: "🔗",
+    color: "var(--integ)",
+    deep: "var(--integ)",
+    bg: "var(--integ-bg)",
+    description: "Convergencia de economía circular, cloud computing e IA en sistemas holísticos, junto con tecnologías emergentes que apuntan hacia una economía regenerativa.",
+    subcategories: [
+      {
+        id: "integ-sistemas",
+        title: "Sistemas Holísticos",
+        tags: ["Digital twins", "IoT + Blockchain", "AI + Cloud"],
+        preview: "Dell Luna 2.0 logra desensamblaje en <b>menos de 30 segundos</b> con trazabilidad completa",
+        detail: {
+          description: "Los sistemas holísticos combinan gemelos digitales, IoT y blockchain con IA y cloud computing para crear plataformas de toma de decisiones integradas, donde la trazabilidad y la optimización ocurren en tiempo real a lo largo de toda la cadena de valor.",
+          applications: [
+            "Gemelos digitales (digital twins) de productos y procesos industriales completos",
+            "IoT combinado con blockchain para trazabilidad inmutable de componentes",
+            "Plataformas de análisis en tiempo real que integran datos de múltiples fuentes",
+            "IA aplicada sobre infraestructura cloud para predicción de fallos y optimización de mantenimiento"
+          ],
+          caseStudies: [
+            { name: "Microsoft Circular Center", note: "Centro que integra IoT, IA y procesos circulares para la gestión de hardware de datacenter." },
+            { name: "Google Circular Data Center", note: "Iniciativa que aplica principios de economía circular al ciclo de vida completo de la infraestructura cloud." },
+            { name: "Dell Concept Luna 2.0", note: "Evolución del prototipo de laptop circular, con desensamblaje en menos de 30 segundos y trazabilidad de componentes." }
+          ],
+          impact: [
+            { num: "<30 seg", label: "tiempo de desensamblaje logrado por Dell Concept Luna 2.0" },
+            { num: "100%", label: "trazabilidad de componentes en sistemas integrados de Microsoft y Google" }
+          ],
+          orgs: [
+            { name: "Microsoft Circular Centers", url: "https://www.microsoft.com/sustainability" },
+            { name: "Google Sustainability", url: "https://sustainability.google" }
+          ],
+          norm: "Estándares de interoperabilidad IoT · Marcos de gobernanza de gemelos digitales industriales."
+        }
+      },
+      {
+        id: "integ-emergentes",
+        title: "Tecnologías Emergentes",
+        tags: ["Computación cuántica", "Biocomputación", "Captura de carbono"],
+        preview: "Microsoft Project Silica almacena <b>125 PB</b> en 1 gramo de vidrio · Climeworks capturó <b>1.4M ton CO2e</b>",
+        detail: {
+          description: "La computación cuántica, la biocomputación y las tecnologías de captura de carbono representan la frontera de innovación que podría transformar radicalmente la eficiencia de los sistemas tecnológicos sostenibles en la próxima década.",
+          applications: [
+            "Optimización logística mediante algoritmos cuánticos para reducir rutas y consumo de combustible",
+            "Almacenamiento de datos en ADN sintético (DNA data storage) de densidad extrema",
+            "Almacenamiento óptico de ultra larga duración en vidrio (Project Silica)",
+            "Captación directa de aire (Direct Air Capture) y meteorización de rocas mejorada (enhanced rock weathering)"
+          ],
+          caseStudies: [
+            { name: "DHL — Routing cuántico", note: "Pruebas de optimización de rutas logísticas mediante algoritmos de computación cuántica." },
+            { name: "Microsoft Project Silica", note: "Tecnología de almacenamiento de datos en vidrio capaz de guardar 125 petabytes en un solo gramo." },
+            { name: "Climeworks", note: "Planta de captura directa de aire (DAC) que ha capturado 1.4 millones de toneladas de CO2 equivalente." }
+          ],
+          impact: [
+            { num: "1 exabyte/m³", label: "densidad de almacenamiento proyectada con tecnologías emergentes hacia 2026" },
+            { num: "125 PB/g", label: "capacidad de almacenamiento de ADN sintético por gramo" },
+            { num: "1.4M ton CO2e", label: "capturadas por la planta de Climeworks" }
+          ],
+          orgs: [
+            { name: "Microsoft Research", url: "https://www.microsoft.com/sustainability" },
+            { name: "Climeworks", url: "https://climeworks.com" }
+          ],
+          norm: "Marcos voluntarios de certificación de captura de carbono · Estándares emergentes de computación cuántica aplicada."
+        }
+      },
+      {
+        id: "integ-futuro",
+        title: "Futuro 2025–2030",
+        tags: ["Economía regenerativa", "Circularity as a Service", "Pasaportes digitales"],
+        preview: "Proyección de <b>15%</b> del consumo eléctrico global por IA hacia 2030",
+        detail: {
+          description: "La visión a 2030 apunta hacia una economía regenerativa que va más allá de la circularidad: cómputo consciente del carbono en todos los niveles, diseño generativo con IA y pasaportes digitales de producto universales que acompañen cada artículo durante todo su ciclo de vida.",
+          applications: [
+            "IA generativa aplicada al diseño de productos circulares desde su concepción",
+            "Reciclaje autónomo mediante robótica avanzada sin intervención humana",
+            "Pasaportes Digitales de Producto (Digital Product Passports) como estándar regulatorio",
+            "Circularity as a Service (CaaS): modelos de negocio donde la circularidad se ofrece como servicio gestionado"
+          ],
+          caseStudies: [
+            { name: "Siemens Xcelerator", note: "Plataforma digital que integra IA y datos para acelerar la transformación sostenible industrial." },
+            { name: "SAP Responsible Design and Production", note: "Solución empresarial para gestionar el cumplimiento de economía circular y huella de carbono extendida." }
+          ],
+          impact: [
+            { num: "15%", label: "proyección del consumo eléctrico global atribuible a la IA hacia 2030" },
+            { num: "100%", label: "meta de materiales circulares anunciada por algunas grandes tecnológicas hacia 2030" }
+          ],
+          orgs: [
+            { name: "Siemens", url: "https://www.siemens.com" },
+            { name: "SAP", url: "https://www.sap.com" }
+          ],
+          norm: "Reglamento de Diseño Ecológico para Productos Sostenibles (UE, ESPR) · Digital Product Passport (obligatorio progresivamente en la UE desde 2027)."
+        }
+      }
+    ]
+  }
+};
+
+// Relaciones para el mapa de Nivel 1 (fuerza: 1 = moderada, 2 = fuerte)
+const RELATIONS = [
+  { from: "circular",    to: "integracion", strength: 2 },
+  { from: "cloud",       to: "integracion", strength: 2 },
+  { from: "ia",          to: "integracion", strength: 2 },
+  { from: "circular",    to: "cloud",       strength: 1 },
+  { from: "cloud",       to: "ia",          strength: 2 },
+  { from: "ia",          to: "circular",    strength: 1 }
+];
+
+const OFFICIAL_LINKS = [
+  { name: "Google Sustainability", url: "https://sustainability.google" },
+  { name: "Microsoft Sustainability", url: "https://www.microsoft.com/sustainability" },
+  { name: "AWS Sustainability", url: "https://sustainability.aboutamazon.com" },
+  { name: "Ellen MacArthur Foundation", url: "https://www.ellenmacarthurfoundation.org" },
+  { name: "UE Green Deal", url: "https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal_es" },
+  { name: "AI for Sustainability (Google)", url: "https://ai.google/sustainability" }
+];
+
+
+// =====================================================================
+// LÓGICA DE LA APLICACIÓN — MAPA INTERACTIVO
+// =====================================================================
+
+const state = { level: 1, category: null };
+
+const els = {
+  level1Wrap: document.getElementById('level1-svg-wrap'),
+  viewL1: document.getElementById('view-level1'),
+  viewL2: document.getElementById('view-level2'),
+  l2Badge: document.getElementById('l2-badge'),
+  l2Title: document.getElementById('l2-title'),
+  l2Desc: document.getElementById('l2-desc'),
+  l2Grid: document.getElementById('l2-grid'),
+  breadcrumb: document.getElementById('breadcrumb'),
+  levelPill: document.getElementById('level-pill'),
+  backL1: document.getElementById('btn-back-l1'),
+  modalOverlay: document.getElementById('modal-overlay'),
+  modalCard: document.getElementById('modal-card'),
+  modalHeader: document.getElementById('modal-header'),
+  modalCatTag: document.getElementById('modal-cat-tag'),
+  modalTitle: document.getElementById('modal-title'),
+  modalBody: document.getElementById('modal-body'),
+  modalClose: document.getElementById('modal-close'),
+  officialLinks: document.getElementById('official-links'),
+};
+
+// ---------------------------------------------------------------------
+// NIVEL 1 — Mapa SVG general
+// ---------------------------------------------------------------------
+function buildLevel1Svg(){
+  const W = 1000, H = 560;
+  const cx = W/2, cy = H/2 - 10;
+
+  // posiciones de los 3 pilares en triángulo alrededor del centro
+  const positions = {
+    circular:    { x: cx - 300, y: cy - 150 },
+    cloud:       { x: cx + 300, y: cy - 150 },
+    ia:          { x: cx,       y: cy + 200 },
+    integracion: { x: cx,       y: cy - 10  }
+  };
+
+  const colorMap = {
+    circular: getComputedColor('--circ'),
+    cloud: getComputedColor('--cloud'),
+    ia: getComputedColor('--ia'),
+    integracion: getComputedColor('--integ')
+  };
+
+  let linesSvg = '';
+  RELATIONS.forEach(rel => {
+    const a = positions[rel.from], b = positions[rel.to];
+    const width = rel.strength === 2 ? 4 : 2;
+    const dash = rel.strength === 2 ? '' : 'flow-line';
+    linesSvg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"
+      stroke="${colorMap[rel.from]}" stroke-width="${width}" stroke-opacity="0.45"
+      class="${dash}" stroke-linecap="round" />`;
+  });
+
+  let nodesSvg = '';
+  Object.keys(CATEGORIES).forEach(catId => {
+    const cat = CATEGORIES[catId];
+    const pos = positions[catId];
+    const isCenter = catId === 'integracion';
+    const r = isCenter ? 78 : 92;
+    const color = colorMap[catId];
+
+    nodesSvg += `
+    <g class="node-group" tabindex="0" role="button" aria-label="${cat.name}" data-cat="${catId}" onclick="openLevel2('${catId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLevel2('${catId}')}">
+      <circle class="node-circle" cx="${pos.x}" cy="${pos.y}" r="${r}" fill="${color}" fill-opacity="${isCenter ? 0.16 : 0.13}" stroke="${color}" stroke-width="2.5"/>
+      <circle cx="${pos.x}" cy="${pos.y}" r="${r-14}" fill="${color}" fill-opacity="0.07"/>
+      <text class="node-label" x="${pos.x}" y="${pos.y - (isCenter?2:6)}" text-anchor="middle" font-size="${isCenter?15:17}" fill="${color}">
+        ${wrapTspans(cat.shortName, pos.x, isCenter ? 13 : 15)}
+      </text>
+      <text x="${pos.x}" y="${pos.y + r - 22}" text-anchor="middle" font-size="26">${cat.icon}</text>
+      <text class="node-sub" x="${pos.x}" y="${pos.y + r + 22}" text-anchor="middle" font-size="11" fill="${getComputedColor('--ink-soft')}">
+        ${cat.subcategories.length} subcategorías · clic para explorar
+      </text>
+    </g>`;
+  });
+
+  const svg = `
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa de relaciones entre Economía Circular, Cloud Computing, Inteligencia Artificial e Integración">
+    <g id="lines-layer">${linesSvg}</g>
+    <g id="nodes-layer">${nodesSvg}</g>
+  </svg>`;
+
+  els.level1Wrap.innerHTML = svg;
+}
+
+function wrapTspans(text, x, fontSize){
+  // Divide el texto en 1-2 líneas según longitud para que entre en el nodo
+  const words = text.split(' ');
+  if (words.length <= 1 || text.length <= 14) {
+    return `<tspan x="${x}" dy="0">${text}</tspan>`;
+  }
+  const mid = Math.ceil(words.length/2);
+  const line1 = words.slice(0, mid).join(' ');
+  const line2 = words.slice(mid).join(' ');
+  return `<tspan x="${x}" dy="-${fontSize*0.55}">${line1}</tspan><tspan x="${x}" dy="${fontSize*1.1}">${line2}</tspan>`;
+}
+
+function getComputedColor(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+// ---------------------------------------------------------------------
+// NIVEL 2 — Grid de subcategorías de una categoría
+// ---------------------------------------------------------------------
+function openLevel2(catId){
+  const cat = CATEGORIES[catId];
+  state.level = 2;
+  state.category = catId;
+
+  els.l2Badge.textContent = cat.icon;
+  els.l2Badge.style.background = cat.bg;
+  els.l2Title.textContent = cat.name;
+  els.l2Title.style.color = cat.deep;
+  els.l2Desc.textContent = cat.description;
+
+  els.l2Grid.innerHTML = cat.subcategories.map(sub => `
+    <div class="sub-card" tabindex="0" role="button" aria-label="Ver detalle de ${escapeHtml(sub.title)}"
+      style="--cat-color:${cat.color}; --cat-bg:${cat.bg}; --cat-deep:${cat.deep};"
+      onclick="openModal('${catId}','${sub.id}')"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal('${catId}','${sub.id}')}">
+      <span class="open-hint">VER DETALLE →</span>
+      <h3>${escapeHtml(sub.title)}</h3>
+      <div class="tag-row">
+        ${sub.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+      </div>
+      <div class="stat-preview">${sub.preview}</div>
+    </div>
+  `).join('');
+
+  showView('level2');
+  updateBreadcrumb();
+}
+
+// ---------------------------------------------------------------------
+// NIVEL 3 — Modal de detalle
+// ---------------------------------------------------------------------
+function openModal(catId, subId){
+  const cat = CATEGORIES[catId];
+  const sub = cat.subcategories.find(s => s.id === subId);
+  const d = sub.detail;
+
+  els.modalHeader.style.background = cat.bg;
+  els.modalHeader.style.setProperty('--cat-bg', cat.bg);
+  els.modalCatTag.style.color = cat.deep;
+  els.modalCatTag.textContent = `${cat.icon} ${cat.shortName} — Nivel 3`;
+  els.modalTitle.textContent = sub.title;
+
+  els.modalBody.innerHTML = `
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Descripción</h4>
+      <p>${escapeHtml(d.description)}</p>
+    </div>
+
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Aplicaciones principales</h4>
+      <ul class="modal-list" style="--cat-color:${cat.color}">
+        ${d.applications.map(a => `<li>${escapeHtml(a)}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Casos de estudio (2020–2025)</h4>
+      <ul class="modal-list" style="--cat-color:${cat.color}">
+        ${d.caseStudies.map(c => `<li><b>${escapeHtml(c.name)}</b> — ${escapeHtml(c.note)}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Impacto cuantificado</h4>
+      <div class="impact-box">
+        ${d.impact.map(i => `<div class="impact-row" style="--cat-deep:${cat.deep}"><span class="num">${escapeHtml(i.num)}</span><span>${escapeHtml(i.label)}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Empresas / organizaciones</h4>
+      <div class="org-chip-row">
+        ${d.orgs.map(o => `<span class="org-chip" style="--cat-deep:${cat.deep}">🔗 <a href="${o.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(o.name)}</a></span>`).join('')}
+      </div>
+    </div>
+
+    <div class="modal-section" style="--cat-color:${cat.color}">
+      <h4>Marco normativo aplicable</h4>
+      <div class="norm-box">${escapeHtml(d.norm)}</div>
+    </div>
+
+    <div class="source-note">
+      FUENTE: Trabajo de Investigación sobre Economía Circular, Cloud Computing e IA (2020–2025) · Anexos A, B y C de la actividad.
+    </div>
+  `;
+
+  els.modalOverlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(){
+  els.modalOverlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+els.modalClose.addEventListener('click', closeModal);
+els.modalOverlay.addEventListener('click', (e) => {
+  if (e.target === els.modalOverlay) closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && els.modalOverlay.classList.contains('active')) closeModal();
+});
+
+// ---------------------------------------------------------------------
+// NAVEGACIÓN GENERAL
+// ---------------------------------------------------------------------
+function showView(viewName){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  if (viewName === 'level1') els.viewL1.classList.add('active');
+  if (viewName === 'level2') els.viewL2.classList.add('active');
+}
+
+function goToLevel1(){
+  state.level = 1;
+  state.category = null;
+  showView('level1');
+  updateBreadcrumb();
+}
+
+function updateBreadcrumb(){
+  let html = `<button onclick="goToLevel1()">Vista general</button>`;
+  if (state.level >= 2 && state.category){
+    const cat = CATEGORIES[state.category];
+    html += `<span class="sep">/</span><span class="current">${escapeHtml(cat.shortName)}</span>`;
+  }
+  els.breadcrumb.innerHTML = html;
+
+  const pillText = state.level === 1
+    ? 'NIVEL 1 — VISTA GENERAL'
+    : 'NIVEL 2 — DETALLE POR CATEGORÍA';
+  els.levelPill.textContent = pillText;
+}
+
+els.backL1.addEventListener('click', goToLevel1);
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ---------------------------------------------------------------------
+// ENLACES OFICIALES (footer)
+// ---------------------------------------------------------------------
+function buildOfficialLinks(){
+  els.officialLinks.innerHTML = OFFICIAL_LINKS.map(l => `
+    <a href="${l.url}" target="_blank" rel="noopener noreferrer">
+      <span>${escapeHtml(l.name)}</span>
+      <span class="arrow">↗</span>
+    </a>
+  `).join('');
+}
+
+// ---------------------------------------------------------------------
+// INIT
+// ---------------------------------------------------------------------
+buildLevel1Svg();
+buildOfficialLinks();
+updateBreadcrumb();
+
+window.addEventListener('resize', () => {
+  // El SVG es responsive vía viewBox, no requiere reconstrucción en resize.
+});
+
+</script>
+</body>
+</html>
